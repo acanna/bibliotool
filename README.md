@@ -1,16 +1,18 @@
 # bibliotool
 A set of Python utils for local library.
 
-## How to use bibliotool
-
-### Create database and tables
+## How to use bibliotool 
+`$ pip3 install -r requirements.txt`
+### Without Docker:
 ```
-$ pip3 install -r requirements.txt
 $ sudo -i -u postgres
-postgres$  createdb bibliotool
-postgre$ psql -U postgres -d bibliotool -a -f init.sql
+postgre$ psql -U postgres -a -f init.sql
 ```
-### Running utils
+### With Docker
+```
+$ sudo docker-compose -d
+```
+## Running utils
 
 #### digger.py
 ```
