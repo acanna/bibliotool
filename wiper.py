@@ -4,9 +4,9 @@ import db
 
 parser = argparse.ArgumentParser(
     description='This is an utility for deleting books from database')
-parser.add_argument('-n', help='book id', type=int)
+parser.add_argument('-n', help='book for delete id', type=int)
 parser.add_argument('-a', action='store_true', default=False,
-                    help='clean the database')
+                    help='clean the entire database')
 args = parser.parse_args()
 
 conn = db.connect()

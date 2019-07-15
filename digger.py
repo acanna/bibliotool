@@ -11,14 +11,12 @@ import psutil
 
 import db
 
-os.system('sudo service postgresql start')
-
 parser = argparse.ArgumentParser(
-    description='This is an utility for adding books in database')
-parser.add_argument('-s', help='directory path')
-parser.add_argument('-a', help='book path')
+    description='This is an utility for adding books to database')
+parser.add_argument('-s', help='path to directory with books')
+parser.add_argument('-a', help='book file path')
 parser.add_argument('-u', action='store_true', default=False,
-                    help='update information')
+    help='update flag, shows if you need to update path to existing books')
 args = parser.parse_args()
 books = []
 if args.a:
