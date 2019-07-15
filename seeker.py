@@ -34,11 +34,3 @@ if query:
             print(x[0])
         else:
             print(x)
-
-conn = db.connect()
-cur = conn.cursor()
-
-cur.execute(f'''SELECT * FROM Book''')
-
-for x in cur.fetchall():
-    print(x)
