@@ -1,5 +1,6 @@
 import argparse
 import gzip
+import itertools
 import multiprocessing
 import os
 import xml.etree.ElementTree as ET
@@ -9,6 +10,8 @@ import dateparser
 import psutil
 
 import db
+
+os.system('sudo service postgresql start')
 
 parser = argparse.ArgumentParser(
     description='This is an utility for adding books in database')
@@ -30,22 +33,32 @@ if args.s:
                 books.append(dirname + file)
 
 
-def extract_book(book):
-    if book.endswith('.zip'):
-        book = zipfile.ZipFile(book)
-        book = [book.read(name) for name in book.namelist()][0]
-    elif book.endswith('.gz'):
-        book = gzip.open(book, 'r')
-    return book
-
-
 def get_info(book):
-    book = extract_book(book)
-
-    if type(book) == bytes:
-        root = ET.fromstring(book.decode('utf-8'))
+    if book.endswith('fb2'):
+        for event, elem in ET.iterparse(book,
+                                        events=('end', 'end-ns')):
+            if elem and elem.tag.endswith('title-info'):
+                root = elem
+                break
     else:
-        root = ET.parse(book).getroot()
+        if book.endswith('.zip'):
+            book = zipfile.ZipFile(book)
+            book = book.open(book.namelist()[0])
+        elif book.endswith('.gz'):
+            book = gzip.open(book, 'r')
+        text = []
+        while book.readable():
+            line = book.readline().decode('utf-8')
+            text.append(line)
+            if '</title-info>' in line:
+                break
+
+        text = ''.join(text)
+        parser = ET.XMLPullParser(['start'])
+        parser.feed(text)
+        for event, elem in parser.read_events():
+            if elem and elem.tag.endswith('title-info'):
+                root = elem
 
     title, author, year = None, None, None
 
@@ -70,7 +83,6 @@ def get_info(book):
 
     find_tags(root)
     year = dateparser.parse(year).year if year else -1
-
     return title, author if author else '', year
 
 
@@ -79,6 +91,7 @@ def get_infos(books):
 
 
 num_cpus = psutil.cpu_count(logical=True)
+
 pool = multiprocessing.Pool(num_cpus)
 
 data = [None] * num_cpus
@@ -86,9 +99,10 @@ k = len(books) // num_cpus
 for i in range(num_cpus - 1):
     data[i] = books[i * k: (i + 1) * k]
 data[-1] = books[(num_cpus - 1) * k:]
-results = pool.map(get_infos, data)
-books = zip(sum(results, []), books)
 
+results = pool.map(get_infos, data)
+
+books = zip(list(itertools.chain.from_iterable(results)), books)
 
 conn = db.connect()
 cur = conn.cursor()
