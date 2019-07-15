@@ -1,7 +1,7 @@
 # bibliotool
 A set of Python utils for local library.
 
-## How to run project without Docker
+## How to run project (without Docker)
 
 ### Create database and tables
 ```
