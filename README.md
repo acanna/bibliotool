@@ -10,7 +10,7 @@ postgre$ psql -U postgres -a -f init.sql
 ```
 ### With Docker
 ```
-$ sudo docker-compose -d
+$ sudo docker-compose up -d
 ```
 ## Running utils
 
