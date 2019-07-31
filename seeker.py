@@ -5,7 +5,7 @@ import db
 parser = argparse.ArgumentParser(
     description='This is an utility for searching books in database, \
         prints results to stdout')
-parser.add_argument('-a',  help='author name')
+parser.add_argument('-a', help='author name')
 parser.add_argument('-n', help='book name')
 parser.add_argument('-y', help='book year', type=int)
 parser.add_argument('-s', action='store_true', default=False,
@@ -20,17 +20,8 @@ if args.n:
 if args.y:
     query['year'] = args.y
 
-
 if query:
-    conn = db.connect()
-    cur = conn.cursor()
-
+    connection, cursor = db.get_connection()
     query = [f"{k} = '{query[k]}'" for k in query]
-
-    cur.execute(f'''SELECT * FROM Book WHERE {' AND '.join(query)}''')
-
-    for x in cur.fetchall():
-        if args.s:
-            print(x[0])
-        else:
-            print(x)
+    db.search_book(cursor, query. args.s)
+    db.close_connection(connection, cursor)

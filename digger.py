@@ -1,6 +1,7 @@
 import argparse
 import gzip
 import itertools
+import math
 import multiprocessing
 import os
 import xml.etree.ElementTree as ET
@@ -15,38 +16,27 @@ parser = argparse.ArgumentParser(
     description='This is an utility for adding books to database')
 parser.add_argument('-s', help='path to directory with books')
 parser.add_argument('-a', help='book file path')
-parser.add_argument('-u', action='store_true', default=False,
+parser.add_argument(
+    '-u', action='store_true', default=False,
     help='update flag, shows if you need to update path to existing books')
-args = parser.parse_args()
-books = []
-if args.a:
-    books.append(args.a)
-if args.s:
-    for dirname, subdirs, files in os.walk(args.s):
-        if not dirname.endswith('/'):
-            dirname += '/'
-        for file in files:
-            if file.endswith('.fb2') or file.endswith(
-                    '.fb2.zip') or file.endswith('.fb2.gz'):
-                books.append(dirname + file)
 
 
-def get_info(book):
-    if book.endswith('fb2'):
-        for event, elem in ET.iterparse(book,
+def get_info(book_path):
+    if book_path.endswith('fb2'):
+        for event, elem in ET.iterparse(book_path,
                                         events=('end', 'end-ns')):
             if elem and elem.tag.endswith('title-info'):
                 root = elem
                 break
     else:
-        if book.endswith('.zip'):
-            book = zipfile.ZipFile(book)
-            book = book.open(book.namelist()[0])
-        elif book.endswith('.gz'):
-            book = gzip.open(book, 'r')
+        if book_path.endswith('.zip'):
+            book_file = zipfile.ZipFile(book_path)
+            book_file = book_file.open(book_file.namelist()[0])
+        elif book_path.endswith('.gz'):
+            book_file = gzip.open(book_path, 'r')
         text = []
-        while book.readable():
-            line = book.readline().decode('utf-8')
+        while book_file.readable():
+            line = book_file.readline().decode('utf-8')
             text.append(line)
             if '</title-info>' in line:
                 break
@@ -81,39 +71,56 @@ def get_info(book):
 
     find_tags(root)
     year = dateparser.parse(year).year if year else -1
-    return title, author if author else '', year
+    return (title, author if author else '', year), book_path
 
 
-def get_infos(books):
-    return [get_info(book) for book in books]
+def get_infos(book_paths):
+    return [get_info(path) for path in book_paths]
 
 
-num_cpus = psutil.cpu_count(logical=True)
+args = parser.parse_args()
+book_paths = []
+if args.a:
+    if os.path.isfile(args.a):
+        if args.a.endswith('.fb2') or args.a.endswith(
+                '.fb2.zip') or args.a.endswith('.fb2.gz'):
+            book_paths.append(args.a)
+    else:
+        print(f'File "{args.a}" does not exist')
+if args.s:
+    if os.path.isdir(args.s):
+        for dirname, subdirs, files in os.walk(args.s):
+            if not dirname.endswith('/'):
+                dirname += '/'
+            for file in files:
+                if file.endswith('.fb2') or file.endswith(
+                        '.fb2.zip') or file.endswith('.fb2.gz'):
+                    book_paths.append(dirname + file)
+    else:
+        print(f'Directory "{args.s}" does not exist')
 
-pool = multiprocessing.Pool(num_cpus)
+def delete_duplicates(book_infos):
+    for x, y in dict(book_infos).items():
+        yield (*x, y)
 
-data = [None] * num_cpus
-k = len(books) // num_cpus
-for i in range(num_cpus - 1):
-    data[i] = books[i * k: (i + 1) * k]
-data[-1] = books[(num_cpus - 1) * k:]
 
-results = pool.map(get_infos, data)
 
-books = zip(list(itertools.chain.from_iterable(results)), books)
+if book_paths:
+    num_cpus = psutil.cpu_count(logical=True)
 
-conn = db.connect()
-cur = conn.cursor()
+    pool = multiprocessing.Pool(num_cpus)
 
-if args.u:
-    books = dict(books)
-    cur.execute(f'''INSERT INTO Book(name, author, year, path)
-VALUES {', '.join(map(lambda x: str((*x[0], x[1])), books.items()))}
-ON CONFLICT (name, author, year) DO UPDATE
-    SET path = excluded.path''')
-else:
-    cur.execute(f'''INSERT INTO Book(name, author, year, path)
-VALUES {', '.join(map(lambda x: str((*x[0], x[1])), books))}
-ON CONFLICT (name, author, year) DO NOTHING''')
+    data = [None] * num_cpus
+    k = math.ceil(len(book_paths) / num_cpus)
+    for i in range(num_cpus):
+        data[i] = book_paths[i * k: (i + 1) * k]
 
-conn.commit()
+    books_data = delete_duplicates(itertools.chain.from_iterable(pool.map(get_infos, data)))
+
+    connection, cursor = db.get_connection()
+
+    if args.u:
+        db.insert_update(cursor, books_data)
+    else:
+        db.insert_do_nothing(cursor, books_data)
+    db.close_connection(connection, cursor)

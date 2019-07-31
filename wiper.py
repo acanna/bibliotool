@@ -9,12 +9,11 @@ parser.add_argument('-a', action='store_true', default=False,
                     help='clean the entire database')
 args = parser.parse_args()
 
-conn = db.connect()
-cur = conn.cursor()
+connection, cursor = db.get_connection()
 
 if args.a:
-    cur.execute('TRUNCATE TABLE Book')
+    db.delete_all(cursor)
 elif args.n:
-    cur.execute(f'DELETE FROM Book WHERE id = {args.n}')
+    db.delete_by_id(cursor, args.n)
 
-conn.commit()
+db.close_connection(connection, cursor)
