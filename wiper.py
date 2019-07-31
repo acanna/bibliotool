@@ -7,13 +7,15 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-n', help='book for delete id', type=int)
 parser.add_argument('-a', action='store_true', default=False,
                     help='clean the entire database')
-args = parser.parse_args()
 
-connection, cursor = db.get_connection()
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-if args.a:
-    db.delete_all(cursor)
-elif args.n:
-    db.delete_by_id(cursor, args.n)
+    connection, cursor = db.get_connection()
 
-db.close_connection(connection, cursor)
+    if args.a:
+        db.delete_all(cursor)
+    elif args.n:
+        db.delete_by_id(cursor, args.n)
+
+    db.close_connection(connection, cursor)

@@ -10,18 +10,20 @@ parser.add_argument('-n', help='book name')
 parser.add_argument('-y', help='book year', type=int)
 parser.add_argument('-s', action='store_true', default=False,
                     help='output only book id')
-args = parser.parse_args()
 
-query = {}
-if args.a:
-    query['author'] = args.a
-if args.n:
-    query['name'] = args.n
-if args.y:
-    query['year'] = args.y
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-if query:
-    connection, cursor = db.get_connection()
-    query = [f"{k} = '{query[k]}'" for k in query]
-    db.search_book(cursor, query. args.s)
-    db.close_connection(connection, cursor)
+    query = {}
+    if args.a:
+        query['author'] = args.a
+    if args.n:
+        query['name'] = args.n
+    if args.y:
+        query['year'] = args.y
+
+    if query:
+        connection, cursor = db.get_connection()
+        query = [f"{k} = '{query[k]}'" for k in query]
+        db.search_book(cursor, query.args.s)
+        db.close_connection(connection, cursor)
