@@ -69,8 +69,8 @@ def parse_book(book_path):
         return title, author, year
 
     title, author, year = find_tags(root, None, None, None)
-    year = dateparser.parse(year).year if year else -1
-    return (title, author if author else '', year), book_path
+    year = dateparser.parse(year).year if year else None
+    return (title, author, year), book_path
 
 
 def parse_books(book_paths):
@@ -115,11 +115,12 @@ if __name__ == '__main__':
             data[i] = book_paths[i * k: (i + 1) * k]
 
         books_data = itertools.chain.from_iterable(pool.map(parse_books, data))
+        books_data = delete_duplicates(books_data)
 
         connection, cursor = db.get_connection()
 
         if args.u:
-            db.insert_update(cursor, delete_duplicates(books_data))
+            db.insert_update(cursor, books_data)
         else:
             db.insert_do_nothing(cursor, books_data)
 

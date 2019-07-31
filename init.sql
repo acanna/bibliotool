@@ -8,6 +8,5 @@ CREATE TABLE Book(
     author TEXT,
     year INT,
     path TEXT NOT NULL,
-    UNIQUE(name, author, year),
     UNIQUE(path)
 );

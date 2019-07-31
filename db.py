@@ -64,9 +64,8 @@ def search_book(cur, query, only_id):
 def insert_do_nothing(cur, books_data):
     psycopg2.extras.execute_values(
         cur,
-        '''INSERT INTO Book(name, author, year, path)
-VALUES %s
-ON CONFLICT (name, author, year) DO NOTHING''',
+        '''INSERT INTO Book(name, author, year, path) VALUES %s
+ON CONFLICT (path) DO NOTHING''',
         books_data,
         page_size=1000
     )
@@ -76,9 +75,8 @@ ON CONFLICT (name, author, year) DO NOTHING''',
 def insert_update(cur, books_data):
     psycopg2.extras.execute_values(
         cur,
-        '''INSERT INTO Book(name, author, year, path)
-VALUES %s
-ON CONFLICT (name, author, year) DO UPDATE 
+        '''INSERT INTO Book(name, author, year, path) VALUES %s
+ON CONFLICT (path) DO UPDATE 
 SET path = excluded.path''',
         books_data,
         page_size=1000

@@ -25,5 +25,5 @@ if __name__ == '__main__':
     if query:
         connection, cursor = db.get_connection()
         query = [f"{k} = '{query[k]}'" for k in query]
-        db.search_book(cursor, query.args.s)
+        db.search_book(cursor, query, args.s)
         db.close_connection(connection, cursor)
