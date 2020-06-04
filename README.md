@@ -42,7 +42,7 @@ optional arguments:
   -s          output only book id
 
 ```
-Usage example: `python3 -a Mark Lutz`
+Usage example: `python3 seeker.py -a Mark Lutz`
 
 #### wiper.py
 
