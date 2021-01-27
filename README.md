@@ -1,5 +1,5 @@
 # bibliotool
-A set of Python utils for local library.
+Python utility for managing local e-library.
 
 ## How to use bibliotool 
 `$ pip3 install -r requirements.txt`
